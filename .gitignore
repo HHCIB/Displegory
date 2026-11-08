@@ -1,0 +1,12 @@
+# Local settings: stations, names, paths
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor / OS
+.vscode/
+Thumbs.db
+desktop.ini
+.DS_Store

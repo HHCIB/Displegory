@@ -1,0 +1,15 @@
+[Unit]
+Description=Displegory e-paper departure board
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=displegory
+WorkingDirectory=/home/displegory/firmware
+ExecStart=/home/displegory/firmware/run.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
