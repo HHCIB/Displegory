@@ -36,17 +36,16 @@ def get(key, default=None, required=False):
     return value
 
 
-MODES = ("train_bus", "train_bus_metro")
-DISPLAY_MODE = get("DISPLAY_MODE", "train_bus")
-if DISPLAY_MODE not in MODES:
-    raise SystemExit(f"DISPLAY_MODE must be one of {', '.join(MODES)} (got '{DISPLAY_MODE}')")
-SHOW_METRO = DISPLAY_MODE == "train_bus_metro"
-
 PENDELTAG_SITE_ID = get("PENDELTAG_SITE_ID", required=True)
 BUS_STOP_ID = get("BUS_STOP_ID", required=True)
 BUS_LINE = get("BUS_LINE", required=True)
-METRO_SITE_ID = get("METRO_SITE_ID", required=SHOW_METRO)
+METRO_SITE_ID = get("METRO_SITE_ID", required=True)
 METRO_LINES = [l.strip() for l in get("METRO_LINES", "").split(",") if l.strip()]
+
+# Buttons (BCM numbers), wired to GND; internal pull-ups are used.
+BUTTON_NEXT_PIN = int(get("BUTTON_NEXT_PIN", "26"))
+BUTTON_PREV_PIN = int(get("BUTTON_PREV_PIN", "19"))
+REFRESH_SECONDS = int(get("REFRESH_SECONDS", "60"))
 
 STATION_NAME = get("STATION_NAME", "Station")
 BUS_STOP_NAME = get("BUS_STOP_NAME", "")

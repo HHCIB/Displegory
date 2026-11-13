@@ -10,7 +10,20 @@ Installs the Displegory firmware on a Raspberry Pi 3 B+ from a blank SD card. So
 | Waveshare 7.5" e-Paper V2 + driver HAT | 800x480 black/white. Datasheet: `7.5inch_e-Paper_V2_Specification.pdf` in the project root. |
 | microSD card | 8 GB or larger. |
 | Power supply | 5 V / 2.5 A micro-USB. |
+| 2x momentary push button | Optional. Normally open. Switch screens. |
 | Computer | Raspberry Pi Imager, SSH and `scp`. |
+
+### Button wiring
+
+Each button connects a GPIO to GND. No resistors; the internal pull-ups are used. GPIO19 and GPIO26 are not used by the e-Paper HAT.
+
+| Button | Function | Header pin | BCM |
+|---|---|---|---|
+| 1 | Next screen | 37 | GPIO26 |
+| 2 | Previous screen | 35 | GPIO19 |
+| Both | GND (shared) | 39 | GND |
+
+Other pins: set `BUTTON_NEXT_PIN` / `BUTTON_PREV_PIN` in `.env`.
 
 Tested OS release: Raspberry Pi OS Lite 64-bit, Debian 13.7 (trixie), `aarch64`.
 
@@ -87,12 +100,12 @@ The driver path used by the firmware is `/home/<user>/e-Paper/RaspberryPi_Jetson
 On your computer, in the `Firmware` directory:
 
 ```bash
-scp fetch_data.py display_data.py config.py run.sh .env.example <user>@<hostname>:~/firmware/
+scp main.py fetch_data.py display_data.py config.py run.sh .env.example <user>@<hostname>:~/firmware/
 ```
 
 If you already have a configured `.env`, add it to the `scp` command and skip `cp .env.example .env` in step 6.
 
-Keep all files in one directory on the Pi; `config.py` and `run.sh` locate the other files relative to themselves.
+Keep all files in one directory on the Pi; `config.py` and `run.sh` locate the other files relative to themselves. When updating an existing install, copy the changed files and run `sudo systemctl restart displegory`.
 
 If you edit files on Windows, save them with LF line endings; CRLF breaks `run.sh`.
 
@@ -116,15 +129,17 @@ nano .env
 
 | Setting | Required | Description | Example |
 |---|---|---|---|
-| `DISPLAY_MODE` | No | `train_bus` or `train_bus_metro`. Default: `train_bus`. | `train_bus_metro` |
 | `PENDELTAG_SITE_ID` | Yes | SL site ID of the train station. All `TRAIN` departures from this site are shown. | `9117` |
 | `BUS_STOP_ID` | Yes | SL site ID of the bus stop. | `9117` |
 | `BUS_LINE` | Yes | Bus line number, as shown on the bus. Only this line is shown. | `50` |
-| `METRO_SITE_ID` | In `train_bus_metro` | SL site ID of the metro station. | `9117` |
+| `METRO_SITE_ID` | Yes | SL site ID of the metro station. | `9117` |
 | `METRO_LINES` | No | Comma-separated metro lines to show. Empty: all metro lines at the site. | `17,18,19` (green line) |
+| `BUTTON_NEXT_PIN` | No | BCM GPIO of the next-screen button. Default: `26`. | `26` |
+| `BUTTON_PREV_PIN` | No | BCM GPIO of the previous-screen button. Default: `19`. | `19` |
+| `REFRESH_SECONDS` | No | Interval between API fetches. Default: `60`. | `60` |
 | `STATION_NAME` | No | Display header text. Default: `Station`. | `Odenplan` |
 | `BUS_STOP_NAME` | No | Bus section title suffix. Omitted if empty. | `Odenplan` |
-| `DATA_FILE` | No | JSON file passed from fetch to display. Default: `/tmp/transport_data.json`. | `/tmp/transport_data.json` |
+| `DATA_FILE` | No | Last fetch as JSON, used by `display_data.py` when run on its own. Default: `/tmp/transport_data.json`. | `/tmp/transport_data.json` |
 | `EPD_LIB_PATH` | No | Waveshare driver directory. Default: `/home/displegory/e-Paper/RaspberryPi_JetsonNano/python/lib`; set this if your username differs. | `/home/<user>/e-Paper/RaspberryPi_JetsonNano/python/lib` |
 
 `STATION_NAME` and `BUS_STOP_NAME` support Swedish characters (å, ä, ö) if `.env` is saved as UTF-8.
@@ -153,13 +168,13 @@ On the Pi, in `~/firmware`:
 python3 fetch_data.py
 ```
 
-Expected: `Data saved: <n> trains, <m> buses`
+Expected: `Data saved: <n> trains, <m> buses, <k> metro`
 
 ```bash
 python3 display_data.py
 ```
 
-Expected: `Display updated at <YYYY-MM-DD HH:MM:SS>`, and the departure board appears on the panel. No `sudo`: the user needs to be in the `spi` and `gpio` groups (check with `groups`; add with `sudo usermod -aG spi,gpio $USER`, then log in again).
+Expected: `Display updated: screen 1`, and the departure board appears on the panel. No `sudo`: the user needs to be in the `spi` and `gpio` groups (check with `groups`; add with `sudo usermod -aG spi,gpio $USER`, then log in again).
 
 | Error | Cause |
 |---|---|
@@ -168,17 +183,23 @@ Expected: `Display updated at <YYYY-MM-DD HH:MM:SS>`, and the departure board ap
 | `ModuleNotFoundError: No module named 'waveshare_epd'` | `EPD_LIB_PATH` doesn't match the driver location. |
 | No SPI device / display doesn't refresh | SPI not enabled, or no reboot after enabling it. |
 
+Test the buttons (each press prints a line; Ctrl+C to stop):
+
+```bash
+python3 -c "from gpiozero import Button; from signal import pause; b1 = Button(26); b2 = Button(19); b1.when_pressed = lambda: print('Button 1'); b2.when_pressed = lambda: print('Button 2'); pause()"
+```
+
 ## 8. Run
 
 ```bash
 ./run.sh
 ```
 
-Refreshes about every 65 s. Stop with Ctrl+C.
+Expected: `Fetched: ...`, then `Display updated: screen 1`. Buttons switch screens; the data refreshes every 60 s. Stop with Ctrl+C.
 
 ## 9. Start on boot
 
-`displegory.service` runs `run.sh` as a systemd service after the network is up, and restarts it if it exits with an error. The file assumes the default user `displegory` and `/home/displegory/firmware`; the `sed` below substitutes your username if it differs.
+`displegory.service` runs `run.sh` (and so `main.py`) as a systemd service after the network is up, and restarts it if it exits with an error. The file assumes the default user `displegory` and `/home/displegory/firmware`; the `sed` below substitutes your username if it differs.
 
 On your computer, in the `Firmware` directory:
 
@@ -200,8 +221,12 @@ Expected: `Active: active (running)`. The panel refreshes within about 10 s.
 | Task | Command |
 |---|---|
 | Follow log output | `journalctl -u displegory -f` |
+| Start | `sudo systemctl start displegory` |
 | Stop | `sudo systemctl stop displegory` |
-| Disable on boot | `sudo systemctl disable displegory` |
 | Restart after changing files or `.env` | `sudo systemctl restart displegory` |
+| Status | `systemctl status displegory` |
+| Disable on boot | `sudo systemctl disable displegory` |
 
-Don't run `./run.sh` manually while the service is running; both would drive the display at once.
+Files can be copied while the service runs; restart to load them.
+
+Stop the service before running `./run.sh`, `display_data.py` or the button test manually; only one process may drive the display and buttons. Start it again afterwards. Use `stop`, not `kill`: a killed process is restarted after 10 s.
