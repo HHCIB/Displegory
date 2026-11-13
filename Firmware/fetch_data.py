@@ -70,7 +70,7 @@ def fetch():
         'update_time': datetime.now().isoformat(),
         'pendeltag': select(get_departures(PENDELTAG_SITE_ID, responses), is_train),
         'buses': select(get_departures(BUS_STOP_ID, responses), is_bus),
-        'metro': select(get_departures(METRO_SITE_ID, responses), is_metro),
+        'metro': select(get_departures(METRO_SITE_ID, responses), is_metro) if METRO_SITE_ID else [],
     }
 
 

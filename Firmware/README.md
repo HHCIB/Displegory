@@ -27,6 +27,8 @@ All files must be in the same directory: `config.py` reads `.env` from its own d
 | 3 | Bus (13) |
 | 4 | Pendeltåg (13) |
 
+Without `METRO_SITE_ID`: three screens, Pendeltåg (5) and bus (5), bus (13), Pendeltåg (13).
+
 Button 1 (GPIO26) moves to the next screen, button 2 (GPIO19) to the previous one; both wrap around. The current screen number is shown under the header. Starts on screen 1.
 
 ## main.py

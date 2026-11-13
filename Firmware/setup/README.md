@@ -132,7 +132,7 @@ nano .env
 | `PENDELTAG_SITE_ID` | Yes | SL site ID of the train station. All `TRAIN` departures from this site are shown. | `9117` |
 | `BUS_STOP_ID` | Yes | SL site ID of the bus stop. | `9117` |
 | `BUS_LINE` | Yes | Bus line number, as shown on the bus. Only this line is shown. | `50` |
-| `METRO_SITE_ID` | Yes | SL site ID of the metro station. | `9117` |
+| `METRO_SITE_ID` | No | SL site ID of the metro station. Empty: no metro sections, three screens. | `9117` |
 | `METRO_LINES` | No | Comma-separated metro lines to show. Empty: all metro lines at the site. | `17,18,19` (green line) |
 | `BUTTON_NEXT_PIN` | No | BCM GPIO of the next-screen button. Default: `26`. | `26` |
 | `BUTTON_PREV_PIN` | No | BCM GPIO of the previous-screen button. Default: `19`. | `19` |
