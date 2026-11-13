@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Render departures to the e-Paper panel.
 
-Run directly to show DATA_FILE once: python3 display_data.py [screen 1-4]
+Run directly to show DATA_FILE once: python3 display_data.py [screen number]
 """
 import sys
 import json
 from datetime import datetime
-from config import (STATION_NAME, BUS_LINE, BUS_STOP_NAME, METRO_LINES,
+from config import (STATION_NAME, BUS_LINE, BUS_STOP_NAME, METRO_SITE_ID, METRO_LINES,
                     DATA_FILE, EPD_LIB_PATH)
 sys.path.append(EPD_LIB_PATH)
 from waveshare_epd import epd7in5_V2
@@ -17,12 +17,19 @@ WIDTH, HEIGHT = 800, 480
 
 # Screens in button order. Each: sections top to bottom as (data key, rows shown).
 # Row counts fit 480 px: SECTIONS_TOP + per section (BAR_H + BAR_GAP + SECTION_GAP + rows * ROW_H).
-SCREENS = [
-    [('pendeltag', 3), ('buses', 3), ('metro', 3)],
-    [('metro', 13)],
-    [('buses', 13)],
-    [('pendeltag', 13)],
-]
+if METRO_SITE_ID:
+    SCREENS = [
+        [('pendeltag', 3), ('buses', 3), ('metro', 3)],
+        [('metro', 13)],
+        [('buses', 13)],
+        [('pendeltag', 13)],
+    ]
+else:  # no metro configured
+    SCREENS = [
+        [('pendeltag', 5), ('buses', 5)],
+        [('buses', 13)],
+        [('pendeltag', 13)],
+    ]
 
 # Layout (px)
 COL_LINE, COL_DEST, COL_TIME = 40, 140, 680

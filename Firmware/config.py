@@ -39,7 +39,7 @@ def get(key, default=None, required=False):
 PENDELTAG_SITE_ID = get("PENDELTAG_SITE_ID", required=True)
 BUS_STOP_ID = get("BUS_STOP_ID", required=True)
 BUS_LINE = get("BUS_LINE", required=True)
-METRO_SITE_ID = get("METRO_SITE_ID", required=True)
+METRO_SITE_ID = get("METRO_SITE_ID", "")  # empty: no metro sections or screen
 METRO_LINES = [l.strip() for l in get("METRO_LINES", "").split(",") if l.strip()]
 
 # Buttons (BCM numbers), wired to GND; internal pull-ups are used.
